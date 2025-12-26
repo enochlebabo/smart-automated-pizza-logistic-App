@@ -12,8 +12,8 @@ Future<void> main() async {
   
   // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://mmgmlfqcpdvhgprwxrzn.supabase.co',
-    anonKey: 'sb_publishable_lLp7vUB8kT7189VXpeMzAw_cQeTpE4S',
+    url: '',
+    anonKey: '',
   );
   
   runApp(const MealMeshApp());
