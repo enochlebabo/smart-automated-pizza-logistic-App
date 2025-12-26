@@ -7,12 +7,14 @@
       "name": "mealmesh_pro",
       "version": "1.0.0+1",
       "dependencies": [
+        "animations",
         "cupertino_icons",
         "flutter",
         "flutter_spinkit",
         "google_fonts",
         "http",
         "intl",
+        "lottie",
         "provider",
         "shimmer",
         "supabase_flutter"
@@ -44,6 +46,23 @@
         "stack_trace",
         "stream_channel",
         "test_api",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "animations",
+      "version": "2.1.1",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "lottie",
+      "version": "2.7.0",
+      "dependencies": [
+        "archive",
+        "flutter",
+        "path",
         "vector_math"
       ]
     },
@@ -221,6 +240,14 @@
         "stream_channel",
         "string_scanner",
         "term_glyph"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "3.6.1",
+      "dependencies": [
+        "crypto",
+        "path"
       ]
     },
     {

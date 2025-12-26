@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/menu_provider.dart';
 import '../../../../core/providers/cart_provider.dart';
+import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../shared/widgets/empty_state.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +15,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _selectedCategory = 'All';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
   
   @override
   void initState() {
@@ -23,12 +27,69 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<MenuItem> _filterItems(List<MenuItem> items) {
+    if (_searchQuery.isEmpty && _selectedCategory == 'All') {
+      return items;
+    }
+    
+    return items.where((item) {
+      final matchesCategory = _selectedCategory == 'All' || 
+                            item.category == _selectedCategory;
+      final matchesSearch = _searchQuery.isEmpty ||
+                          item.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                          item.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final menuProvider = context.watch<MenuProvider>();
     final cartProvider = context.watch<CartProvider>();
 
     return Column(
       children: [
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Search for pizza, burgers, drinks...',
+              prefixIcon: const Icon(Icons.search, color: Color(0xFF689F38)),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 16,
+              ),
+            ),
+          ),
+        ),
+        
         // Categories
         SizedBox(
           height: 60,
@@ -77,7 +138,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildMenuList(MenuProvider menuProvider, CartProvider cartProvider) {
     if (menuProvider.isLoading) {
-      return _buildShimmerLoader();
+      return LoadingWidget(message: 'Loading menu...');
     }
 
     if (menuProvider.error != null) {
@@ -98,43 +159,31 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final items = _selectedCategory == 'All'
-        ? menuProvider.menuItems
-        : menuProvider.getByCategory(_selectedCategory);
+    final filteredItems = _filterItems(menuProvider.menuItems);
 
-    if (items.isEmpty) {
-      return const Center(
-        child: Text('No items found'),
+    if (filteredItems.isEmpty) {
+      return EmptyState(
+        title: 'No items found',
+        message: _searchQuery.isNotEmpty
+            ? 'Try searching for something else'
+            : 'No items in this category',
+        icon: Icons.search_off,
+        onAction: _searchQuery.isNotEmpty
+            ? () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              }
+            : null,
+        actionText: 'Clear Search',
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: items.length,
+      itemCount: filteredItems.length,
       itemBuilder: (context, index) {
-        final item = items[index];
+        final item = filteredItems[index];
         return _buildMenuItem(item, cartProvider);
-      },
-    );
-  }
-
-  Widget _buildShimmerLoader() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 6,
-      itemBuilder: (context, index) {
-        return Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
-          child: Container(
-            height: 100,
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
       },
     );
   }
@@ -145,101 +194,167 @@ class _HomePageState extends State<HomePage> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: const Color(0xFF689F38).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.fastfood,
-            color: Color(0xFF689F38),
-            size: 30,
-          ),
-        ),
-        title: Text(
-          item.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              item.description,
-              style: TextStyle(color: Colors.grey[600]),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '\$${item.price.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Color(0xFF689F38),
-              ),
-            ),
-          ],
-        ),
-        trailing: isInCart
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          // Show item details
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Item Image/Icon
+              Container(
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF689F38),
-                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFF689F38).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: const Icon(
+                  Icons.fastfood,
+                  color: Color(0xFF689F38),
+                  size: 40,
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Item Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 18, color: Colors.white),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => cartProvider.removeItem(item.id),
-                    ),
                     Text(
-                      '${cartItem!.quantity}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add, size: 18, color: Colors.white),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => cartProvider.addItem(
-                        item.id,
-                        item.name,
-                        item.price,
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '\$${item.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF689F38),
+                          ),
+                        ),
+                        
+                        // Quantity Controls or Add Button
+                        if (isInCart)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF689F38),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove, size: 18, color: Colors.white),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => cartProvider.removeItem(item.id),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text(
+                                    '${cartItem!.quantity}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => cartProvider.addItem(
+                                    item.id,
+                                    item.name,
+                                    item.price,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ElevatedButton(
+                            onPressed: () {
+                              cartProvider.addItem(
+                                item.id,
+                                item.name,
+                                item.price,
+                              );
+                              _showAddToCartSnackbar(context, item.name);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF689F38),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: const Text(
+                              'Add',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-              )
-            : ElevatedButton(
-                onPressed: () {
-                  cartProvider.addItem(
-                    item.id,
-                    item.name,
-                    item.price,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Added ${item.name} to cart'),
-                      backgroundColor: const Color(0xFF689F38),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF689F38),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text('Add'),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddToCartSnackbar(BuildContext context, String itemName) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('Added $itemName to cart'),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF689F38),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }

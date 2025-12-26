@@ -8,6 +8,12 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "animations",
+      "rootUri": "file:///Users/enoch/.pub-cache/hosted/pub.dev/animations-2.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "app_links",
       "rootUri": "file:///Users/enoch/.pub-cache/hosted/pub.dev/app_links-6.4.1",
       "packageUri": "lib/",
@@ -30,6 +36,12 @@
       "rootUri": "file:///Users/enoch/.pub-cache/hosted/pub.dev/app_links_web-1.0.4",
       "packageUri": "lib/",
       "languageVersion": "3.2"
+    },
+    {
+      "name": "archive",
+      "rootUri": "file:///Users/enoch/.pub-cache/hosted/pub.dev/archive-3.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "async",
@@ -222,6 +234,12 @@
       "rootUri": "file:///Users/enoch/.pub-cache/hosted/pub.dev/logging-1.3.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "lottie",
+      "rootUri": "file:///Users/enoch/.pub-cache/hosted/pub.dev/lottie-2.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
     },
     {
       "name": "matcher",
